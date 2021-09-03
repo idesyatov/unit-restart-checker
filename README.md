@@ -1,10 +1,6 @@
 # Systemd unit restart checker
 
-Один из вариантов проверки перезапуска systemd unit
-
-Необходимо определить $TIME_TICK эквивалентный таймеру крона
-
-Создать файл конфигураций по подобию config_example и заменить нужные директивы
+To run, you need to describe the configuration file and execute app with him
 
 Example with use cron:
 
