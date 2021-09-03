@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+declare -A TELEGRAM=(
+    # example token
+    ["apiToken"]="100777666:AAAuEEEEF_6noWFMoCS_-DXFOlpOE5u888F" 
+    # example chat id
+    ["chatId"]="0777666" 
+)

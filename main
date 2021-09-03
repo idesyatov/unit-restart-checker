@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+# For example, cron record
+# */1   *   *   *   *   su -c 'cd /opt/projects/toolctl && ./main ./config' -s /bin/bash user > /dev/null 2>&1
+
+set -o nounset
+set -o errexit
+
+RED='\033[0;31m'
+GRAY='\033[0;37m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NORMAL='\033[0m'
+
+TIME_TICK="60"
+
+# UNITS THAT WE CHECK
+UNITS=(
+nginx.service
+docker.service
+filebeat.service
+)
+
+DATE_NOW=$(date +'%Y-%m-%d %H:%M:%S')
+WORK_DIR=$(pwd)
+
+# CONFIG INIT
+if [[ $1 ]]; then
+    CONFIG_INC="$1" # notifier config
+    CONFIG="${WORK_DIR}/${CONFIG_INC}" && source ${CONFIG}
+else
+    echo "You need config file to run this. Example: \"${0} ./example_config.sh\""
+    exit 1
+fi
+
+# UNIT CHECK
+function unit_check(){
+	if [ $(systemctl show -p SubState --value $1) == "running" ]; then
+		echo "$1 running"
+		
+		# UNIT INFO
+		local TIME_START=$(systemctl show -p ActiveEnterTimestamp --value $1 | awk '{print $2, $3}')
+		
+		# TIMESTAMPS
+		local TIMESTAMP_START=$(date -d "${TIME_START}" +%s)
+		local TIMESTAMP_NOW=$(date -d "${DATE_NOW}" +%s)
+
+		local DIFF=$(($TIMESTAMP_NOW - $TIMESTAMP_START))
+		
+		# IF SERVICE START TIME < TIME_TICK (SECOUNDS)
+		if [ $DIFF -le $TIME_TICK ]; then
+			echo -e "${RED}service $1 was restarted${NORMAL}"
+			ACCUM+="$1\n\n"
+		else
+			echo "service $1 running"
+		fi
+	fi
+}
+
+# SEND INCOMING ARG TO TELEGRAM
+function notifyTelegram () {
+    local TIME="10"
+    local URL="https://api.telegram.org/bot${TELEGRAM[apiToken]}/sendMessage"
+    local CODE_ONLY="-o /dev/null -s -w %{http_code}\n" 
+
+    local MSG=$(echo -e "Сообщение от:  $(hostname -s)\nСервисы были перезагружены:\n\n${ACCUM}\n")
+	
+    curl $CODE_ONLY -s --max-time $TIME \
+	 -d "chat_id=${TELEGRAM[chatId]}&disable_web_page_preview=1&text=${MSG}" $URL
+}
+
+# MAIN LOOP)
+function main() {
+    echo -e "$DATE_NOW Run the script\n"
+	
+    # GET START CHECK UNITS
+    for i in "${UNITS[@]}"
+    do
+        unit_check $i
+    done
+
+    if [ -z ${ACCUM+x} ]; then 
+        echo -e "${GREEN}All services work normally. You can sleep well${NORMAL}"
+    # WE SEND A NOTIFICATION IF THERE IS ANYTHING
+    else
+	echo -e "${RED}Some services behaved strangely. Notification sent:${NORMAL}"
+	notifyTelegram "$ACCUM"
+    fi
+
+    echo -e "\n$DATE_NOW Completing the script"
+    exit 0
+}
+
+main
