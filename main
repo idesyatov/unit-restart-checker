@@ -35,26 +35,26 @@ fi
 
 # UNIT CHECK
 function unit_check(){
-	if [ $(systemctl show -p SubState --value $1) == "running" ]; then
-		echo "$1 running"
-		
-		# UNIT INFO
-		local TIME_START=$(systemctl show -p ActiveEnterTimestamp --value $1 | awk '{print $2, $3}')
-		
-		# TIMESTAMPS
-		local TIMESTAMP_START=$(date -d "${TIME_START}" +%s)
-		local TIMESTAMP_NOW=$(date -d "${DATE_NOW}" +%s)
+    if [ $(systemctl show -p SubState --value $1) == "running" ]; then
+        echo "$1 running"
+            
+        # UNIT INFO
+        local TIME_START=$(systemctl show -p ActiveEnterTimestamp --value $1 | awk '{print $2, $3}')
+            
+        # TIMESTAMPS
+        local TIMESTAMP_START=$(date -d "${TIME_START}" +%s)
+        local TIMESTAMP_NOW=$(date -d "${DATE_NOW}" +%s)
 
-		local DIFF=$(($TIMESTAMP_NOW - $TIMESTAMP_START))
-		
-		# IF SERVICE START TIME < TIME_TICK (SECOUNDS)
-		if [ $DIFF -le $TIME_TICK ]; then
-			echo -e "${RED}service $1 was restarted${NORMAL}"
-			ACCUM+="$1\n\n"
-		else
-			echo "service $1 running"
-		fi
-	fi
+        local DIFF=$(($TIMESTAMP_NOW - $TIMESTAMP_START))
+            
+        # IF SERVICE START TIME < TIME_TICK (SECOUNDS)
+        if [ $DIFF -le $TIME_TICK ]; then
+            echo -e "${RED}service $1 was restarted${NORMAL}"
+            ACCUM+="$1\n\n"
+        else
+            echo "service $1 running"
+        fi  
+    fi  
 }
 
 # SEND INCOMING ARG TO TELEGRAM
