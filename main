@@ -34,7 +34,7 @@ else
 fi
 
 # UNIT CHECK
-function unit_check(){
+function unit_check() {
     if [ $(systemctl show -p SubState --value $1) == "running" ]; then
         echo "$1 running"
             
@@ -58,7 +58,7 @@ function unit_check(){
 }
 
 # SEND INCOMING ARG TO TELEGRAM
-function notifyTelegram () {
+function notifyTelegram() {
     local TIME="10"
     local URL="https://api.telegram.org/bot${TELEGRAM[apiToken]}/sendMessage"
     local CODE_ONLY="-o /dev/null -s -w %{http_code}\n" 
